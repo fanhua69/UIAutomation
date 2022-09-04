@@ -21,11 +21,10 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-IUIAutomationElement* GetTopLevelWindowByName(DWORD processID);
+IUIAutomationElement* GetTopLevelWindowByName(LPWSTR windowName);
+IUIAutomationElement* GetTopLevelWindowByID(DWORD processID);
 IUIAutomationElement* GetChildWindowByName(IUIAutomationElement* pCurrent, LPWSTR windowName);
 IUIAutomationElement* GetChildWindowByNameAndType(IUIAutomationElement* pCurrent, LPWSTR  windowName, long controlID);
-
-
 
 #include <uiautomation.h>
 
@@ -77,7 +76,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         &pi);*/
 
     WCHAR outlookWindowName[250] = L"Inbox -fanhua69@gmail.com - Outlook";
-    IUIAutomationElement* pOutlook = GetTopLevelWindowByName(pi.dwProcessId); // outlookWindowName);
+    IUIAutomationElement* pOutlook = GetTopLevelWindowByID(pi.dwProcessId); // outlookWindowName);
     UIA_HWND phwnd;
     HRESULT hr = pOutlook->get_CurrentNativeWindowHandle(&phwnd);
 
@@ -184,7 +183,56 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int) msg.wParam;
 }
 
-IUIAutomationElement* GetTopLevelWindowByName(DWORD processID)
+IUIAutomationElement* GetTopLevelWindowByName(LPWSTR windowName)
+{
+    if (windowName == NULL)
+    {
+        return NULL;
+    }
+
+    VARIANT varProp;
+    varProp.vt = VT_BSTR;
+    varProp.bstrVal = SysAllocString(windowName);
+    if (varProp.bstrVal == NULL)
+    {
+        return NULL;
+    }
+
+    IUIAutomationElement* pRoot = NULL;
+    IUIAutomationElement* pFound = NULL;
+    IUIAutomationCondition* pCondition = nullptr;
+
+    // Get the desktop element. 
+    IUIAutomation* pAutomation = nullptr;
+    HRESULT hr = InitializeUIAutomation(&pAutomation);
+    if (FAILED(hr) || pAutomation == nullptr)
+        goto cleanup;
+
+    hr = pAutomation->GetRootElement(&pRoot);
+    if (FAILED(hr) || pRoot == NULL)
+        goto cleanup;
+
+    // Get a top-level element by name, such as "Program Manager"
+    hr = pAutomation->CreatePropertyCondition(UIA_NamePropertyId, varProp, &pCondition);
+    if (FAILED(hr))
+        goto cleanup;
+
+    pRoot->FindFirst(TreeScope_Subtree /*TreeScope_Children*/, pCondition, &pFound);
+
+cleanup:
+    if (pRoot != NULL)
+        pRoot->Release();
+
+    if (pCondition != NULL)
+        pCondition->Release();
+
+    VariantClear(&varProp);
+    return pFound;
+}
+
+
+
+IUIAutomationElement* GetTopLevelWindowByID(DWORD processID)
 {
     VARIANT varProp;
     varProp.vt = VT_UINT;
@@ -221,6 +269,8 @@ cleanup:
     VariantClear(&varProp);
     return pFound;
 }
+
+
 
 IUIAutomationElement* GetChildWindowByName(IUIAutomationElement* pCurrent, LPWSTR windowName)
 {
