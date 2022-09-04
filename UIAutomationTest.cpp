@@ -66,17 +66,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     ZeroMemory(&pi, sizeof(pi));
 
     LPTSTR szCmdline = _tcsdup(TEXT("C:\\Program Files\\Microsoft Office\\root\\Office16\\OUTLOOK.EXE"));
-    /*CreateProcess(NULL, szCmdline, NULL,           // Process handle not inheritable
+    CreateProcess(NULL, szCmdline, NULL,           // Process handle not inheritable
         NULL,           // Thread handle not inheritable
         FALSE,          // Set handle inheritance to FALSE
         0,              // No creation flags
         NULL,           // Use parent's environment block
         NULL,           // Use parent's starting directory 
         &si,            // Pointer to STARTUPINFO structure
-        &pi);*/
+        &pi);
 
     WCHAR outlookWindowName[250] = L"Inbox -fanhua69@gmail.com - Outlook";
-    IUIAutomationElement* pOutlook = GetTopLevelWindowByID(pi.dwProcessId); // outlookWindowName);
+    IUIAutomationElement* pOutlook = GetTopLevelWindowByName(outlookWindowName);
     UIA_HWND phwnd;
     HRESULT hr = pOutlook->get_CurrentNativeWindowHandle(&phwnd);
 
@@ -235,8 +235,8 @@ cleanup:
 IUIAutomationElement* GetTopLevelWindowByID(DWORD processID)
 {
     VARIANT varProp;
-    varProp.vt = VT_UINT;
-    varProp.uintVal = processID;
+    varProp.vt = VT_INT;
+    varProp.intVal = processID;
 
     IUIAutomationElement* pRoot = NULL;
     IUIAutomationElement* pFound = NULL;
@@ -257,7 +257,7 @@ IUIAutomationElement* GetTopLevelWindowByID(DWORD processID)
     if (FAILED(hr))
         goto cleanup;
 
-    pRoot->FindFirst(TreeScope_Subtree /*TreeScope_Children*/, pCondition, &pFound);
+    pRoot->FindFirst(TreeScope_Subtree, pCondition, &pFound);
 
 cleanup:
     if (pRoot != NULL)
