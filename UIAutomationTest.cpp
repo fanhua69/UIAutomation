@@ -82,6 +82,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     WCHAR outlookWindowName[250] = L"Inbox - fanhua69@gmail.com - Outlook";
     IUIAutomationElement* pOutlook = GetTopLevelWindowByName(outlookWindowName);
+    //IUIAutomationElement* pOutlook = GetTopLevelWindowByID(pi.dwProcessId);  // doesn't work
 
     if (pOutlook)
     {
