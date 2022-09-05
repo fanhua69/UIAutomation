@@ -7,7 +7,10 @@
 #include "UIAutomationClient.h"
 #include "UIAutomationCore.h"
 #include "UIAutomationCoreApi.h"
-
+#include <iostream>
+#include <chrono>
+#include <thread>
+#include <synchapi.h>
 
 #define MAX_LOADSTRING 100
 
@@ -64,7 +67,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
-
+    
     LPTSTR szCmdline = _tcsdup(TEXT("C:\\Program Files\\Microsoft Office\\root\\Office16\\OUTLOOK.EXE"));
     CreateProcess(NULL, szCmdline, NULL,           // Process handle not inheritable
         NULL,           // Thread handle not inheritable
@@ -74,12 +77,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         NULL,           // Use parent's starting directory 
         &si,            // Pointer to STARTUPINFO structure
         &pi);
+    
+    Sleep(3000);
 
-    WCHAR outlookWindowName[250] = L"Inbox -fanhua69@gmail.com - Outlook";
+    WCHAR outlookWindowName[250] = L"Inbox - fanhua69@gmail.com - Outlook";
     IUIAutomationElement* pOutlook = GetTopLevelWindowByName(outlookWindowName);
-    UIA_HWND phwnd;
-    HRESULT hr = pOutlook->get_CurrentNativeWindowHandle(&phwnd);
-
 
     if (pOutlook)
     {
@@ -95,6 +97,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                 HRESULT hr = pInvokePattern->Invoke();
             }
         }
+
+        Sleep(2000);
 
         WCHAR new_email_name[250] = L"Untitled - Message (HTML) ";
         IUIAutomationElement* pNewEmailWindow = GetTopLevelWindowByName(new_email_name);
@@ -115,6 +119,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                 }
             }
 
+            Sleep(2000);
+
+
             WCHAR subject[250] = L"Subject";
             IUIAutomationElement* pSubject = GetChildWindowByNameAndType(pNewEmailWindow, subject, UIA_EditControlTypeId);
             if (pSubject)
@@ -129,10 +136,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                 }
             }
 
+            Sleep(2000);
+
+
             WCHAR mailBody[250] = L"Page 1 content";
             IUIAutomationElement* pBody = GetChildWindowByNameAndType(pNewEmailWindow, mailBody, UIA_EditControlTypeId);
             if (pBody)
             {
+                VARIANT varDOM;
+                pBody->GetCurrentPropertyValue(UIA_IsObjectModelPatternAvailablePropertyId, &varDOM);
+                if (varDOM.boolVal)
+                {
+                    // DOM is supported;
+                }
+
                 IUIAutomationValuePattern* pValuePattern = nullptr;
                 HRESULT hr = pBody->GetCurrentPatternAs(UIA_ValuePatternId,__uuidof(IUIAutomationValuePattern),(void**)&pValuePattern);
                 WCHAR mailBodyText[250] = L"Hello, AutomationEverywhere!";
@@ -143,13 +160,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                 else
                 {
                     HRESULT hr = pBody->SetFocus();
-                    if (hr == S_OK)
+                    Sleep(1000);
+
+                    //if (hr == S_OK)
                     {
+                        UIA_HWND phwnd;
+                        HRESULT hr = pBody->get_CurrentNativeWindowHandle(&phwnd);
+
                         HWND h = (HWND)phwnd;
                         SendMessage(h, WM_SETTEXT, 0, LPARAM(mailBodyText));
                     }
                 }
             }
+
+            Sleep(4000);
 
             WCHAR send[250] = L"Send";
             IUIAutomationElement* pSend = GetChildWindowByNameAndType(pNewEmailWindow, send, UIA_ButtonControlTypeId);
